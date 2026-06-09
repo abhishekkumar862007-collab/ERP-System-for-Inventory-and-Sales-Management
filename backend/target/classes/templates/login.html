@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ERP MASTER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; height: 100vh; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(at 0% 0%, hsla(210,100%,98%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(215,100%,94%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(220,100%,90%,1) 0, transparent 50%); }
+        .card { border: none; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-radius: 1.5rem; overflow: hidden; width: 450px; }
+        .card-header { background: #3b82f6; color: white; padding: 2.5rem; border: none; text-align: center; }
+        .card-body { padding: 3rem; background: white; }
+        .form-control { border-radius: 0.75rem; padding: 0.8rem 1.2rem; border-color: #e2e8f0; }
+        .form-control:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
+        .btn-primary { border-radius: 0.75rem; padding: 0.8rem; font-weight: 700; background-color: #3b82f6; border: none; font-size: 1.1rem; }
+        .btn-primary:hover { background-color: #2563eb; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-boxes-stacked fa-3x mb-3"></i>
+            <h2 class="fw-bold mb-0">ERP MASTER</h2>
+            <p class="mb-0 opacity-75 mt-2">Sign in to manage your inventory</p>
+        </div>
+        <div class="card-body">
+            <!-- ThymeLeaf login logic can be added here later -->
+            <form th:action="@{/login}" method="post">
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-secondary text-uppercase">Username</label>
+                    <input type="text" name="username" class="form-control" placeholder="admin" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-secondary text-uppercase">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 shadow-sm mt-3">Sign In</button>
+            </form>
+            <div class="mt-5 text-center">
+                <p class="text-secondary small mb-0 fw-bold">Default Login:</p>
+                <code class="text-primary fw-bold">admin / admin123</code>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

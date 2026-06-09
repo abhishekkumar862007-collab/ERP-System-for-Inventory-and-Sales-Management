@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/main}">
+<head>
+    <title>Suppliers</title>
+</head>
+<body>
+    <div layout:fragment="pageTitle" class="h4 fw-bold">Supplier Management</div>
+
+    <div layout:fragment="content">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0 text-dark">Supplier Directory</h5>
+                <button class="btn btn-primary btn-sm px-4 fw-bold"><i class="fas fa-plus me-2"></i>Add Supplier</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light table-custom">
+                        <tr>
+                            <th>Supplier Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>GSTIN</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 text-info fw-bold p-2 px-3 rounded-circle me-3">TS</div>
+                                    <h6 class="mb-0 fw-bold">Tech Solutions Inc.</h6>
+                                </div>
+                            </td>
+                            <td>sales@techsolutions.com</td>
+                            <td>+1 234 567 8901</td>
+                            <td><span class="badge bg-light text-dark fw-bold border">22AAAAA0000A1Z5</span></td>
+                            <td class="text-end"><button class="btn btn-light btn-sm text-primary"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 text-info fw-bold p-2 px-3 rounded-circle me-3">GL</div>
+                                    <h6 class="mb-0 fw-bold">Global Logistics</h6>
+                                </div>
+                            </td>
+                            <td>support@globallogistics.net</td>
+                            <td>+1 987 654 3210</td>
+                            <td><span class="badge bg-light text-dark fw-bold border">33BBBBB1111B2Z6</span></td>
+                            <td class="text-end"><button class="btn btn-light btn-sm text-primary"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
