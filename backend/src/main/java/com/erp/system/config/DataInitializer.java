@@ -20,15 +20,31 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.findByUsername("admin").isEmpty()) {
-            User admin = new User(
-                    "admin",
-                    "admin@erp.com",
-                    passwordEncoder.encode("admin123"),
-                    Role.ROLE_ADMIN
+        createOrUpdateUser("admin", "admin@erp.com", "admin1234", Role.ROLE_ADMIN);
+        createOrUpdateUser("sales", "sales@erp.com", "sales1234", Role.ROLE_SALES_EXECUTIVE);
+        createOrUpdateUser("purchase", "purchase@erp.com", "purchase1234", Role.ROLE_PURCHASE_MANAGER);
+        createOrUpdateUser("inventory", "inventory@erp.com", "inventory1234", Role.ROLE_INVENTORY_MANAGER);
+        createOrUpdateUser("accountant", "accountant@erp.com", "accountant1234", Role.ROLE_ACCOUNTANT);
+    }
+
+    private void createOrUpdateUser(String username, String email, String password, Role role) {
+        var userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            User user = new User(
+                    username,
+                    email,
+                    passwordEncoder.encode(password),
+                    role
             );
-            userRepository.save(admin);
-            System.out.println("Default admin user created: admin / admin123");
+            userRepository.save(user);
+            System.out.println("Default user created: " + username + " / " + password + " (" + role + ")");
+        } else {
+            User user = userOpt.get();
+            user.setPassword(passwordEncoder.encode(password));
+            user.setEmail(email);
+            user.setRole(role);
+            userRepository.save(user);
+            System.out.println("User updated: " + username + " / " + password + " (" + role + ")");
         }
     }
 }

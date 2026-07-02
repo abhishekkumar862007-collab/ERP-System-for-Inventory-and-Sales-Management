@@ -30,7 +30,7 @@ function App() {
           <Layout />
         </PrivateRoute>
       }>
-        <index element={<Dashboard />} />
+        <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="products" element={<Products />} />
         <Route path="customers" element={<Customers />} />

@@ -1,34 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, IconButton,
-  TextField, InputAdornment, Avatar, Grid
+  TextField, InputAdornment, Avatar, Dialog, DialogTitle,
+  DialogContent, DialogActions, Alert, Grid
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  PeopleAlt as PeopleIcon,
   Email as EmailIcon,
   Phone as PhoneIcon
 } from '@mui/icons-material';
-
-const initialCustomers = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', phone: '+1 234 567 8901', address: '123 Business Rd, NY', gstin: '22AAAAA0000A1Z5' },
-  { id: 2, name: 'Alice Smith', email: 'alice@corp.com', phone: '+1 987 654 3210', address: '456 Industrial Pkwy, CA', gstin: '33BBBBB1111B2Z6' },
-  { id: 3, name: 'Robert Johnson', email: 'robert@tech.io', phone: '+1 555 012 3456', address: '789 Innovation Dr, TX', gstin: '44CCCCC2222C3Z7' },
-  { id: 4, name: 'Emily Davis', email: 'emily@davis.net', phone: '+1 444 777 8888', address: '101 Pine St, WA', gstin: '55DDDDD3333D4Z8' },
-  { id: 5, name: 'Michael Brown', email: 'mike@brown.com', phone: '+1 222 333 4444', address: '202 Maple Ave, FL', gstin: '66EEEEE4444E5Z9' },
-];
+import api from '../services/api';
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Form fields
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [gstin, setGstin] = useState('');
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await api.get('/api/customers');
+      setCustomers(response.data);
+    } catch (err) {
+      console.error("Error fetching customers", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const handleOpen = () => {
+    setError('');
+    setName('');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    setGstin('');
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const payload = { name, email, phone, address, gstin };
+
+    try {
+      await api.post('/api/customers', payload);
+      fetchCustomers();
+      handleClose();
+    } catch (err) {
+      setError(err.response?.data || "An error occurred saving customer");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -40,6 +86,7 @@ export default function Customers() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
+          onClick={handleOpen}
           sx={{ py: 1, px: 3, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
           Add Customer
@@ -51,7 +98,7 @@ export default function Customers() {
           <TextField
             fullWidth
             size="small"
-            placeholder="Search by name, email or phone..."
+            placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -71,7 +118,6 @@ export default function Customers() {
                 <TableCell sx={{ fontWeight: 700 }}>Customer Name</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Contact Details</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Address & GSTIN</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -80,7 +126,7 @@ export default function Customers() {
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Avatar sx={{ bgcolor: 'primary.light', color: 'primary.main', mr: 2, fontWeight: 700 }}>
-                        {customer.name[0]}
+                        {customer.name[0].toUpperCase()}
                       </Avatar>
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>{customer.name}</Typography>
                     </Box>
@@ -89,28 +135,93 @@ export default function Customers() {
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
                         <EmailIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="body2">{customer.email}</Typography>
+                        <Typography variant="body2">{customer.email || 'N/A'}</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <PhoneIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="body2">{customer.phone}</Typography>
+                        <Typography variant="body2">{customer.phone || 'N/A'}</Typography>
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{customer.address}</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>GSTIN: {customer.gstin}</Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton size="small" color="primary"><EditIcon fontSize="small" /></IconButton>
-                    <IconButton size="small" color="error"><DeleteIcon fontSize="small" /></IconButton>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{customer.address || 'N/A'}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>GSTIN: {customer.gstin || 'N/A'}</Typography>
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredCustomers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} align="center">
+                    <Typography variant="body2" sx={{ color: 'text.secondary', py: 3 }}>No customers found</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Add Dialog */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Add Customer</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Customer Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Email Address"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address"
+                  multiline
+                  rows={2}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="GSTIN"
+                  value={gstin}
+                  onChange={(e) => setGstin(e.target.value)}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button onClick={handleClose} disabled={loading}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? "Saving..." : "Add Customer"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 }

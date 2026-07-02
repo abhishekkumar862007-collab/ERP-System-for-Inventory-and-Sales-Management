@@ -1,45 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Paper, Typography, Card, CardContent,
-  IconButton, List, ListItem, ListItemText, ListItemIcon, Divider
+  IconButton, List, ListItem, ListItemText, Divider
 } from '@mui/material';
 import {
   TrendingUp, ShoppingBag, People, LocalShipping,
   Warning as WarningIcon, ArrowCircleRightOutlined
 } from '@mui/icons-material';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  Legend, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
-
-const dashboardData = {
-  stats: [
-    { title: 'Total Sales', value: '$45,230', icon: <TrendingUp color="primary" />, color: '#e3f2fd' },
-    { title: 'Total Orders', value: '124', icon: <ShoppingBag color="secondary" />, color: '#f3e5f5' },
-    { title: 'New Customers', value: '12', icon: <People color="info" />, color: '#e0f7fa' },
-    { title: 'Stock Value', value: '$12,450', icon: <LocalShipping color="warning" />, color: '#fff3e0' },
-  ],
-  salesTrend: [
-    { name: 'Jan', sales: 4000, purchase: 2400 },
-    { name: 'Feb', sales: 3000, purchase: 1398 },
-    { name: 'Mar', sales: 2000, purchase: 9800 },
-    { name: 'Apr', sales: 2780, purchase: 3908 },
-    { name: 'May', sales: 1890, purchase: 4800 },
-    { name: 'Jun', sales: 2390, purchase: 3800 },
-  ],
-  lowStockItems: [
-    { id: 1, name: 'Logitech G502', sku: 'MS-LGG-502', stock: 2, reorder: 5 },
-    { id: 2, name: 'Dell Monitor 24"', sku: 'MN-DL24-IPS', stock: 5, reorder: 10 },
-    { id: 3, name: 'Mechanical Keyboard RED', sku: 'KB-MC-RED-U', stock: 1, reorder: 3 },
-  ],
-  recentInvoices: [
-    { id: 'INV-001', customer: 'John Doe', amount: '$450.00', status: 'Paid' },
-    { id: 'INV-002', customer: 'Alice Smith', amount: '$1,200.00', status: 'Pending' },
-    { id: 'INV-003', customer: 'Robert Johnson', amount: '$850.50', status: 'Paid' },
-  ]
-};
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await api.get('/api/dashboard/sales-summary');
+      setData(response.data);
+    } catch (err) {
+      console.error("Error loading dashboard metrics", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (!data) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <Typography>Loading Dashboard...</Typography>
+      </Box>
+    );
+  }
+
+  const stats = [
+    { title: 'Total Sales', value: `$${data.totalSales.toFixed(2)}`, icon: <TrendingUp color="primary" />, color: '#e3f2fd' },
+    { title: 'Total Orders', value: String(data.totalOrders), icon: <ShoppingBag color="secondary" />, color: '#f3e5f5' },
+    { title: 'New Customers', value: String(data.newCustomers), icon: <People color="info" />, color: '#e0f7fa' },
+    { title: 'Stock Value', value: `$${data.stockValue.toFixed(2)}`, icon: <LocalShipping color="warning" />, color: '#fff3e0' },
+  ];
+
   return (
     <Box>
       <Typography variant="h4" sx={{ fontWeight: 800, mb: 4, color: '#1e293b' }}>
@@ -47,7 +53,7 @@ export default function Dashboard() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {dashboardData.stats.map((stat) => (
+        {stats.map((stat) => (
           <Grid item xs={12} sm={6} md={3} key={stat.title}>
             <Card sx={{ borderRadius: 4, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', height: '100%' }}>
               <CardContent>
@@ -76,7 +82,7 @@ export default function Dashboard() {
             </Typography>
             <Box sx={{ height: 350, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dashboardData.salesTrend}>
+                <AreaChart data={data.salesTrend}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#1976d2" stopOpacity={0.8} />
@@ -104,25 +110,25 @@ export default function Dashboard() {
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 Recent Invoices
               </Typography>
-              <IconButton size="small"><ArrowCircleRightOutlined /></IconButton>
+              <IconButton size="small" onClick={() => navigate('/invoices')}><ArrowCircleRightOutlined /></IconButton>
             </Box>
             <List sx={{ pt: 0 }}>
-              {dashboardData.recentInvoices.map((invoice, idx) => (
+              {data.recentInvoices.map((invoice, idx) => (
                 <React.Fragment key={invoice.id}>
                   <ListItem sx={{ px: 0 }}>
                     <ListItemText
-                      primary={invoice.customer}
-                      secondary={invoice.id}
+                      primary={invoice.salesOrder.customer.name}
+                      secondary={`INV-${invoice.id}`}
                       primaryTypographyProps={{ fontWeight: 600 }}
                     />
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="body1" sx={{ fontWeight: 700 }}>{invoice.amount}</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>${invoice.totalPayable.toFixed(2)}</Typography>
                       <Typography
                         variant="caption"
                         sx={{
-                          color: invoice.status === 'Paid' ? 'success.main' : 'warning.main',
+                          color: invoice.status === 'PAID' ? 'success.main' : 'warning.main',
                           fontWeight: 700,
-                          bgcolor: invoice.status === 'Paid' ? 'success.light' : 'warning.light',
+                          bgcolor: invoice.status === 'PAID' ? '#e8f5e9' : '#fff3e0',
                           px: 1, borderRadius: 1, opacity: 0.8
                         }}
                       >
@@ -130,9 +136,12 @@ export default function Dashboard() {
                       </Typography>
                     </Box>
                   </ListItem>
-                  {idx < dashboardData.recentInvoices.length - 1 && <Divider />}
+                  {idx < data.recentInvoices.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
+              {data.recentInvoices.length === 0 && (
+                <Typography variant="body2" sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>No recent invoices</Typography>
+              )}
             </List>
           </Paper>
         </Grid>
@@ -146,7 +155,7 @@ export default function Dashboard() {
               </Typography>
             </Box>
             <List>
-              {dashboardData.lowStockItems.map((item) => (
+              {data.lowStockItems.map((item) => (
                 <Card key={item.id} variant="outlined" sx={{ mb: 2, borderRadius: 3, borderStyle: 'dashed' }}>
                   <CardContent sx={{ p: '16px !important' }}>
                     <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>{item.name}</Typography>
@@ -154,19 +163,23 @@ export default function Dashboard() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                       <Box>
                         <Typography variant="caption" sx={{ display: 'block' }}>Current Stock</Typography>
-                        <Typography variant="h6" sx={{ color: 'error.main', lineHeight: 1, fontWeight: 800 }}>{item.stock}</Typography>
+                        <Typography variant="h6" sx={{ color: 'error.main', lineHeight: 1, fontWeight: 800 }}>{item.currentStock}</Typography>
                       </Box>
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="caption" sx={{ display: 'block' }}>Reorder Point</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.reorder}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.reorderLevel}</Typography>
                       </Box>
                     </Box>
                   </CardContent>
                 </Card>
               ))}
+              {data.lowStockItems.length === 0 && (
+                <Typography variant="body2" sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>No low stock alerts</Typography>
+              )}
             </List>
             <Typography
               variant="body2"
+              onClick={() => navigate('/products')}
               sx={{ textAlign: 'center', mt: 2, color: 'primary.main', cursor: 'pointer', fontWeight: 600 }}
             >
               View Full Inventory

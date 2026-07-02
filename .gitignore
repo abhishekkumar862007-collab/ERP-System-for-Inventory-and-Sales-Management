@@ -1,0 +1,38 @@
+# Java / Maven
+**/target/
+*.class
+.mvn/
+*.jar
+*.war
+*.ear
+
+# Node / React
+**/node_modules/
+**/dist/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / Editor config
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.classpath
+.project
+.settings/
+.nbproject/
+*.env
+*.env.local
+
+# Gemini Agent configs & scratch files
+.gemini/
+.agents/
+scratch/
+walkthrough.md
+*.log
+*.sql

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, IconButton,
-  TextField, InputAdornment, Chip, Card, CardContent
+  TextField, InputAdornment, Chip, Card, CardContent, Grid,
+  Dialog, DialogTitle, DialogContent, DialogActions, Alert
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -12,23 +13,109 @@ import {
   Inventory as InventoryIcon,
   FilterList as FilterListIcon
 } from '@mui/icons-material';
-
-const initialProducts = [
-  { id: 1, name: 'Logitech G502 Mouse', sku: 'MS-LGG-502', category: 'Peripherals', price: 45.00, stock: 2, reorder: 5 },
-  { id: 2, name: 'Dell Monitor 24"', sku: 'MN-DL24-IPS', category: 'Monitors', price: 120.00, stock: 5, reorder: 10 },
-  { id: 3, name: 'Mechanical Keyboard RED', sku: 'KB-MC-RED-U', category: 'Peripherals', price: 85.00, stock: 1, reorder: 3 },
-  { id: 4, name: 'Core i7-13700K', sku: 'CPU-INT-137K', category: 'Processors', price: 380.00, stock: 15, reorder: 5 },
-  { id: 5, name: '16GB DDR5 RAM (2x8)', sku: 'RM-CR-D5-16', category: 'Memory', price: 65.00, stock: 25, reorder: 10 },
-];
+import api from '../services/api';
 
 export default function Products() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  // Form state
+  const [editId, setEditId] = useState(null);
+  const [name, setName] = useState('');
+  const [sku, setSku] = useState('');
+  const [category, setCategory] = useState('');
+  const [unitPrice, setUnitPrice] = useState('');
+  const [currentStock, setCurrentStock] = useState('');
+  const [reorderLevel, setReorderLevel] = useState('');
+
+  const fetchProducts = async () => {
+    try {
+      const response = await api.get('/api/products');
+      setProducts(response.data);
+    } catch (err) {
+      console.error("Error fetching products", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleOpen = (product = null) => {
+    setError('');
+    if (product) {
+      setEditId(product.id);
+      setName(product.name);
+      setSku(product.sku);
+      setCategory(product.category || '');
+      setUnitPrice(product.unitPrice);
+      setCurrentStock(product.currentStock);
+      setReorderLevel(product.reorderLevel);
+    } else {
+      setEditId(null);
+      setName('');
+      setSku('');
+      setCategory('');
+      setUnitPrice('');
+      setCurrentStock('');
+      setReorderLevel('');
+    }
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const payload = {
+      name,
+      sku,
+      category,
+      unitPrice: parseFloat(unitPrice),
+      currentStock: parseInt(currentStock),
+      reorderLevel: parseInt(reorderLevel)
+    };
+
+    try {
+      if (editId) {
+        await api.put(`/api/products/${editId}`, payload);
+      } else {
+        await api.post('/api/products', payload);
+      }
+      fetchProducts();
+      handleClose();
+    } catch (err) {
+      setError(err.response?.data || "An error occurred saving the product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await api.delete(`/api/products/${id}`);
+        fetchProducts();
+      } catch (err) {
+        alert(err.response?.data || "Failed to delete product");
+      }
+    }
+  };
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const lowStockCount = products.filter(p => p.currentStock <= p.reorderLevel).length;
 
   return (
     <Box>
@@ -39,6 +126,7 @@ export default function Products() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
+          onClick={() => handleOpen()}
           sx={{ py: 1, px: 3, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
           Add Product
@@ -49,16 +137,16 @@ export default function Products() {
         <Grid item xs={12} md={3}>
            <Card sx={{ borderRadius: 3, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', bgcolor: '#fff' }}>
              <CardContent sx={{ p: 2 }}>
-               <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>Total Items</Typography>
-               <Typography variant="h4" sx={{ fontWeight: 800 }}>842</Typography>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>Total Items</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 800 }}>{products.length}</Typography>
              </CardContent>
            </Card>
         </Grid>
         <Grid item xs={12} md={3}>
            <Card sx={{ borderRadius: 3, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', bgcolor: '#fff' }}>
              <CardContent sx={{ p: 2 }}>
-               <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>Low Stock</Typography>
-               <Typography variant="h4" sx={{ fontWeight: 800, color: 'error.main' }}>12</Typography>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>Low Stock</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'error.main' }}>{lowStockCount}</Typography>
              </CardContent>
            </Card>
         </Grid>
@@ -80,9 +168,6 @@ export default function Products() {
             }}
             sx={{ flexGrow: 1 }}
           />
-          <Button variant="outlined" startIcon={<FilterListIcon />} sx={{ color: 'text.secondary', borderColor: '#e2e8f0', textTransform: 'none' }}>
-            Filters
-          </Button>
         </Box>
 
         <TableContainer>
@@ -108,33 +193,115 @@ export default function Products() {
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{product.name}</Typography>
                   </TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>${product.unitPrice.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: product.stock <= product.reorder ? 'error.main' : 'text.primary' }}>
-                      {product.stock}
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: product.currentStock <= product.reorderLevel ? 'error.main' : 'text.primary' }}>
+                      {product.currentStock}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={product.stock <= product.reorder ? 'Low Stock' : 'In Stock'}
+                      label={product.currentStock <= product.reorderLevel ? 'Low Stock' : 'In Stock'}
                       size="small"
-                      color={product.stock <= product.reorder ? 'error' : 'success'}
+                      color={product.currentStock <= product.reorderLevel ? 'error' : 'success'}
                       sx={{ fontWeight: 700, px: 1 }}
                     />
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton size="small" color="primary"><EditIcon fontSize="small" /></IconButton>
-                    <IconButton size="small" color="error"><DeleteIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="primary" onClick={() => handleOpen(product)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="error" onClick={() => handleDelete(product.id)}><DeleteIcon fontSize="small" /></IconButton>
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredProducts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    <Typography variant="body2" sx={{ color: 'text.secondary', py: 3 }}>No products found</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Add / Edit Dialog */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>{editId ? "Edit Product" : "Add Product"}</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Product Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="SKU"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
+                  disabled={!!editId}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Unit Price ($)"
+                  type="number"
+                  inputProps={{ step: "0.01", min: "0" }}
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Current Stock"
+                  type="number"
+                  inputProps={{ min: "0" }}
+                  value={currentStock}
+                  onChange={(e) => setCurrentStock(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Reorder Level"
+                  type="number"
+                  inputProps={{ min: "0" }}
+                  value={reorderLevel}
+                  onChange={(e) => setReorderLevel(e.target.value)}
+                  required
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button onClick={handleClose} disabled={loading}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? "Saving..." : "Save Product"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 }
-
-// Add Grid import since it was missed in previous thought
-import { Grid } from '@mui/material';

@@ -1,3 +1,15 @@
-/* Legacy Auth DTO Removed */
 package com.erp.system.dto;
-// Handled by standard Spring Security Form Login.
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthRequest {
+    private String username;
+    private String password;
+}
